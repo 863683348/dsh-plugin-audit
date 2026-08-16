@@ -1,0 +1,15 @@
+# dsh-plugin-audit — bundle patch layer.
+#
+# Registers the audit tools (audit_sync / audit_top / audit_plugin), the
+# auditSummary session projection, and the periodic sync schedule host-wide.
+# Because the package declares dsh.client, the same composition row is the
+# browser roster entry that loads the leaderboard panel (/plugins/<id>/client.js).
+- insert:
+    - id: audit
+      name: 'dsh-plugin-audit'
+      config:
+        dataDir: ''
+        githubToken: ''
+        syncIntervalHours: 12
+        maxCatalogEntries: 5000
+        npmProbe: true
