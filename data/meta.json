@@ -1,0 +1,12 @@
+{
+ "version": 1,
+ "lastSyncAt": null,
+ "lastSyncStatus": "seeded",
+ "counts": {
+  "total": 1018,
+  "npmFound": 0,
+  "curated": 1018,
+  "gone": 0
+ },
+ "rateLimit": null
+}
