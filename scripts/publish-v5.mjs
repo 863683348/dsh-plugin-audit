@@ -1,8 +1,9 @@
 /**
- * scripts/publish-v2.mjs — npm publish via raw registry HTTP with timeouts.
- * Token: $DSH_HOME/secrets/npm-token.txt or $env:NPM_TOKEN (never echoed).
+ * scripts/publish-v5.mjs — npm publish via raw registry HTTP (no npm CLI).
+ * npm-shaped tarball: entries prefixed with "package/", contents from
+ * package.json "files" + auto README/LICENSE. Token from secrets.
  */
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
@@ -17,12 +18,33 @@ function loadToken() {
   const home = process.env.DSH_HOME || join(process.env.USERPROFILE, ".dsh");
   const p = join(home, "secrets", "npm-token.txt");
   if (existsSync(p)) return readFileSync(p, "utf8").trim();
-  throw new Error("npm token missing: set NPM_TOKEN or create $DSH_HOME/secrets/npm-token.txt");
+  throw new Error("npm token missing");
+}
+
+function collectFiles() {
+  const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
+  const wanted = new Set(pkg.files || []);
+  wanted.add("package.json");
+  for (const name of ["README.md", "README.zh.md", "LICENSE", "LICENSE.md", "cordis.patch.yml"]) {
+    if (existsSync(join(ROOT, name))) wanted.add(name);
+  }
+  const out = [];
+  const walk = (rel) => {
+    const abs = join(ROOT, rel);
+    if (!existsSync(abs)) return;
+    if (statSync(abs).isDirectory()) {
+      for (const f of readdirSync(abs)) walk(join(rel, f));
+    } else {
+      out.push({ name: "package/" + rel.split("\\").join("/"), data: readFileSync(abs) });
+    }
+  };
+  for (const w of wanted) walk(w);
+  return out.sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function tar(files) {
   const blocks = [];
-  const pad = (buf, size) => { const out = Buffer.alloc(size); buf.copy(out); return out; };
+  const pad = (buf, size) => { const o = Buffer.alloc(size); buf.copy(o); return o; };
   for (const { name, data } of files) {
     const content = Buffer.from(data);
     const header = Buffer.alloc(512);
@@ -51,58 +73,45 @@ function tar(files) {
 const pkg = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8"));
 const name = pkg.name, version = pkg.version;
 const readme = existsSync(join(ROOT, "README.md")) ? readFileSync(join(ROOT, "README.md"), "utf8") : "";
-const libFiles = ["catalog.js", "format.js", "index.js", "scorer.js"]
-  .filter((f) => existsSync(join(ROOT, "lib", f)))
-  .map((f) => ({ name: "lib/" + f, data: readFileSync(join(ROOT, "lib", f)) }));
-const files = [
-  { name: "package.json", data: JSON.stringify(pkg, null, 2) },
-  { name: "README.md", data: readme },
-  { name: "cordis.patch.yml", data: readFileSync(join(ROOT, "cordis.patch.yml"), "utf8") },
-  ...libFiles,
-];
-
+const files = collectFiles();
 const tarball = zlib.gzipSync(tar(files), { level: 9 });
 const shasum = crypto.createHash("sha1").update(tarball).digest("hex");
 const integrity = "sha512-" + crypto.createHash("sha512").update(tarball).digest("base64");
 const tarballName = name + "-" + version + ".tgz";
 
 const versionDoc = {
-  _id: name + "@" + version,
-  name, version,
-  description: pkg.description,
-  main: pkg.main, type: pkg.type, license: pkg.license,
-  files: pkg.files, scripts: pkg.scripts,
-  publishConfig: pkg.publishConfig, dsh: pkg.dsh,
-  peerDependencies: pkg.peerDependencies,
+  _id: name + "@" + version, name, version, description: pkg.description,
+  main: pkg.main, type: pkg.type, license: pkg.license, files: pkg.files,
+  scripts: pkg.scripts, publishConfig: pkg.publishConfig, dsh: pkg.dsh,
+  exports: pkg.exports, keywords: pkg.keywords, peerDependencies: pkg.peerDependencies,
   dist: { integrity, shasum, tarball: REGISTRY + "/" + name + "/-" + tarballName },
 };
-
 const doc = {
   _id: name, name, description: pkg.description,
   "dist-tags": { latest: version },
-  versions: { [version]: versionDoc },
-  readme,
-  _attachments: {
-    [tarballName]: { content_type: "application/octet-stream", data: tarball.toString("base64"), length: tarball.length },
-  },
+  versions: { [version]: versionDoc }, readme,
+  _attachments: { [tarballName]: { content_type: "application/octet-stream", data: tarball.toString("base64"), length: tarball.length } },
 };
 
 const token = loadToken();
 console.log("pkg=" + name + "@" + version + " files=" + files.length + " bytes=" + tarball.length);
+console.log("paths=" + files.map((f) => f.name).join(","));
 
 const who = await fetch(REGISTRY + "/-/whoami", { headers: { Authorization: "Bearer " + token }, signal: AbortSignal.timeout(TO) });
 console.log("whoami status=" + who.status);
-if (!who.ok) { console.log("whoami body=" + (await who.text()).slice(0, 300)); process.exit(1); }
-console.log("whoami=" + JSON.stringify(await who.json()));
+if (!who.ok) { console.log(await who.text()); process.exit(1); }
 
-const put = await fetch(REGISTRY + "/" + encodeURIComponent(name), {
-  method: "PUT",
-  headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", "User-Agent": "dsh-plugin-scorecard/publish-v2" },
-  body: JSON.stringify(doc),
-  signal: AbortSignal.timeout(60000),
-});
-const body = await put.text();
-console.log("PUT status=" + put.status);
-console.log("PUT body=" + body.slice(0, 800));
-if (!put.ok) process.exit(1);
-console.log("OK: https://www.npmjs.com/package/" + name);
+for (let attempt = 1; attempt <= 3; attempt++) {
+  const put = await fetch(REGISTRY + "/" + encodeURIComponent(name), {
+    method: "PUT",
+    headers: { Authorization: "Bearer " + token, "Content-Type": "application/json", "User-Agent": "dsh-plugin-audit/publish" },
+    body: JSON.stringify(doc),
+    signal: AbortSignal.timeout(60000),
+  });
+  const body = await put.text();
+  console.log("PUT attempt " + attempt + " status=" + put.status + " body=" + body.slice(0, 400));
+  if (put.ok) { console.log("OK: https://www.npmjs.com/package/" + name); process.exit(0); }
+  if (put.status !== 429) process.exit(1);
+  await new Promise((r) => setTimeout(r, 25000));
+}
+process.exit(1);
