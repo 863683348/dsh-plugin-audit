@@ -8,11 +8,13 @@ and agent tools that answer *"which plugins are worth installing?"*.
 | --- | --- | --- |
 | Maintenance | 30 | last push recency + star tier + **star trend** (archived → 0 + 🚨 flag) |
 | Docs | 25 | README presence + description depth + license |
-| npm | 30 | npm package exists + publish recency |
+| npm | 30 | npm package exists + publish recency + **weekly downloads (v0.3)** |
 | Ecosystem | 15 | presence in the curated awesome list + listing recency |
 
 Grades: **A 🛡️ (80+)** · **B ✅ (60+)** · **C ⚠️ (40+)** · **D 🚨 (<40 or any high flag)**.
 Scores are pure functions over plain records — fully explainable (every deduction carries a note).
+
+**v0.3:** npm signal now includes a weekly-downloads tier (exists 10 + publish recency 14 + weekly downloads 6).
 
 **Security (v0.2) is a veto, not a weight:** `audit_scan` static-scans a
 plugin's package.json install scripts, shell scripts, and entry sources for

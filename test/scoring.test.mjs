@@ -63,3 +63,13 @@ test("weights sum to 100 and gradeBadge maps every grade", () => {
   for (const g of ["A", "B", "C", "D"]) assert.ok(gradeBadge(g).length > 0);
   assert.equal(gradeBadge("X"), "❓");
 });
+
+test("npm signal: weekly downloads add tier points (v0.3)", () => {
+  const hot = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 1500 } }));
+  assert.equal(hot.points, 30); // 10 + 14 + 6
+  const warm = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 500 } }));
+  assert.equal(warm.points, 28); // 10 + 14 + 4
+  const cold = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 0 } }));
+  assert.equal(cold.points, 24); // 10 + 14 + 0
+  assert.ok(hot.notes.some((n) => n.includes("weekly downloads 1500")));
+});
