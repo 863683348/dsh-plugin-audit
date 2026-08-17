@@ -49,10 +49,10 @@ rc 持久化、混淆、向非白名单域名外传数据。高危/严重发现�
 
 ```bash
 # 本地路径安装
-dsh plugin --profile <profile> add /path/to/dsh-plugin-audit
+dsh plugin --profile <profile> add /path/to/dsh-audit
 
 # 或发布到 npm 后
-dsh plugin --profile <profile> add dsh-plugin-audit
+dsh plugin --profile <profile> add dsh-audit
 ```
 
 重启 DSH。`audit_*` 工具全局注册；Web profile 上输入框上方会出现榜单面板。

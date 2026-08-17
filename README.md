@@ -53,10 +53,10 @@ through DSH's official plugin management:
 
 ```bash
 # from a local checkout
-dsh plugin --profile <profile> add /path/to/dsh-plugin-audit
+dsh plugin --profile <profile> add /path/to/dsh-audit
 
 # or after publishing to npm
-dsh plugin --profile <profile> add dsh-plugin-audit
+dsh plugin --profile <profile> add dsh-audit
 ```
 
 Restart DSH. The `audit_*` tools are registered host-wide; the leaderboard dock appears

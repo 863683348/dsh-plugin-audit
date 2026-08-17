@@ -6,7 +6,7 @@
 # browser roster entry that loads the leaderboard panel (/plugins/<id>/client.js).
 - insert:
     - id: audit
-      name: 'dsh-plugin-audit'
+      name: 'dsh-audit'
       config:
         dataDir: ''
         githubToken: ''
