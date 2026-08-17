@@ -1,6 +1,6 @@
 {
   "name": "dsh-audit",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Ecosystem-wide plugin health audit for DeepSeek Harness: syncs the GitHub dsh-plugin topic into a local catalog, probes npm, static-scans plugin files for security (v0.2), and scores every plugin (maintenance / docs / npm / ecosystem + security veto) with a web leaderboard and agent tools. | DSH 插件生态体检：同步目录、探测 npm、静态安全扫描（v0.2）、四维评分 + 安全一票否决，附榜单与 Agent 工具。",
   "type": "module",
   "main": "lib/index.js",

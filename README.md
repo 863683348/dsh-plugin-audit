@@ -16,6 +16,8 @@ Scores are pure functions over plain records — fully explainable (every deduct
 
 **v0.3:** npm signal now includes a weekly-downloads tier (exists 10 + publish recency 14 + weekly downloads 6).
 
+**v0.4 (真插件校验 / topic-tag farming filter):** deep scan now verifies a repo is actually a DSH plugin — presence of `cordis.patch.yml`, `dsh.bundle` in package.json, or a plugin entry file. Repos with none of these are flagged `not-plugin` (medium) and **capped at grade C**, no matter how healthy they look. The npm probe also detects whether the published package declares `dsh.bundle` (installable via `dsh plugin add`). This filters the ~half of the topic that is old projects or tag farming.
+
 **Security (v0.2) is a veto, not a weight:** `audit_scan` static-scans a
 plugin's package.json install scripts, shell scripts, and entry sources for
 remote-code-execution, encoded commands, rc persistence, obfuscation, and

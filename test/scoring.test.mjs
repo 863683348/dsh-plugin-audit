@@ -64,6 +64,26 @@ test("weights sum to 100 and gradeBadge maps every grade", () => {
   assert.equal(gradeBadge("X"), "❓");
 });
 
+test("npm signal: dsh.bundle declaration is noted (v0.4)", () => {
+  const has = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 0, dshBundle: true } }));
+  assert.ok(has.notes.some((n) => n.includes("declares dsh.bundle")));
+  const lacks = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 0, dshBundle: false } }));
+  assert.ok(lacks.notes.some((n) => n.includes("lacks dsh.bundle")));
+});
+
+test("structure: repo with no plugin evidence is flagged and capped at C (v0.4)", () => {
+  const s = scoreRecord(rec({ structure: { checkedAt: new Date().toISOString(), hasPatch: false, hasBundle: false, hasEntry: false, dshEvidence: false } }));
+  assert.ok(s.flags.some((f) => f.kind === "not-plugin" && f.severity === "medium"));
+  assert.equal(s.grade, "C");
+  assert.ok(s.total >= 80, "a healthy-looking repo should still score high but be capped");
+});
+
+test("structure: real plugin structure produces no not-plugin flag", () => {
+  const s = scoreRecord(rec({ structure: { checkedAt: new Date().toISOString(), hasPatch: true, hasBundle: true, hasEntry: true, dshEvidence: true } }));
+  assert.ok(!s.flags.some((f) => f.kind === "not-plugin"));
+  assert.equal(s.grade, "A");
+});
+
 test("npm signal: weekly downloads add tier points (v0.3)", () => {
   const hot = npmScore(rec({ npm: { exists: true, name: "b", version: "1", publishedAt: iso(5), weeklyDownloads: 1500 } }));
   assert.equal(hot.points, 30); // 10 + 14 + 6

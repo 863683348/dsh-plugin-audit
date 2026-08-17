@@ -21,6 +21,24 @@ test("probeNpm: carries weekly downloads from the downloads API", async () => {
   assert.ok(calls.some((u) => u.includes("/downloads/point/last-week/some-pkg")));
 });
 
+test("probeNpm: detects dsh.bundle from registry metadata (v0.4)", async () => {
+  const fetchImpl = async (url) => {
+    if (url.includes("/downloads/point/last-week/")) return { ok: true, json: async () => ({ downloads: 10 }) };
+    return { status: 200, ok: true, json: async () => ({
+      "dist-tags": { latest: "1.0.0" },
+      versions: { "1.0.0": { dsh: { bundle: { patch: "./cordis.patch.yml" } } } },
+      time: { "1.0.0": "2026-08-01T00:00:00Z" },
+    }) };
+  };
+  const withBundle = await probeNpm("dsh-real", { fetchImpl });
+  assert.equal(withBundle.dshBundle, true);
+  const fetchNoBundle = async () => ({ status: 200, ok: true, json: async () => ({
+    "dist-tags": { latest: "1.0.0" }, versions: { "1.0.0": {} }, time: { "1.0.0": "2026-08-01T00:00:00Z" },
+  }) });
+  const noBundle = await probeNpm("dsh-fake", { fetchImpl: fetchNoBundle });
+  assert.equal(noBundle.dshBundle, false);
+});
+
 test("probeNpm: 404 package has no downloads", async () => {
   const fetchImpl = async () => ({ status: 404, ok: false });
   const out = await probeNpm("ghost-pkg", { fetchImpl });
