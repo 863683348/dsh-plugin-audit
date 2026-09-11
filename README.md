@@ -25,6 +25,10 @@ exfiltration to non-allowlisted hosts. High/critical findings land in the
 `flags` contract → **grade D**, no matter how healthy the other signals look.
 Each finding carries evidence; the scanner is deliberately conservative.
 
+## Compatibility
+
+Tool schemas are validated against the `@deepseek-ai/dsh-tools` value-schema DSL (compiled at plugin load). 0.5.1 fixes a schema violation that made the host abort the whole profile boot on DSH ≥ 0.1.0-rc.6 with `unsupported JSON schema: schema.required is not supported by the value schema DSL`. If you installed an affected version and your DSH no longer starts, upgrade to 0.5.1 (or remove the plugin from the profile) — no data is lost.
+
 ## Features
 
 | Feature | Status |
