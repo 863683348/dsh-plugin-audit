@@ -33,6 +33,7 @@ Each finding carries evidence; the scanner is deliberately conservative.
 | `audit_top` — leaderboard by score / stars / newest / name, category filter | ✅ stable |
 | `audit_plugin` — full report card with evidence notes | ✅ stable |
 | `audit_scan` — per-plugin static security scan (files → findings → veto) | ✅ stable (v0.2) |
+| `audit_history` — score timeline per repo + biggest gainers/losers | ✅ stable (v0.5) |
 | Star trend in maintenance signal (from rolling history snapshots) | ✅ stable (v0.2) |
 | `auditSummary` session projection + composer-dock leaderboard | 🧪 experimental (loader-format client bundle) |
 | Optional periodic sync (schedule service) | 🧪 guarded |
